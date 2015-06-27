@@ -6,11 +6,11 @@ var http = require('http');
 var url = require('url');
 
 /*
- * Rewite the request url.
+ * Create the Target url for the redirect
  *
  * Replaces the host in the request url with another
  *
- * @param url {string} The request url
+ * @param req {object} The request object
  * @param remoteHost {string} The new remoteHost
  * @return {string}
  */
@@ -33,9 +33,9 @@ function createTargetUrl(req, remoteHost) {
 }
 
 var server = connect();
-
 var proxy = new httpProxy.createProxyServer();
 
+// Middleware to perform the redirect
 server.use(function (req, res) {
   var remoteHost = req.headers['x-remote-host'];
   delete req.headers['x-remote-host'];

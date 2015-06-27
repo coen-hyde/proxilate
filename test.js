@@ -1,3 +1,5 @@
+'use strict'
+
 var expect = require('expect.js');
 var http = require('http');
 var async = require('async');
