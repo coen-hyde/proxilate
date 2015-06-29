@@ -11,21 +11,37 @@ require('./server');
 
 // An event bus that emits a request event when ever the
 // target/remote server receives a request
-var reqListener = new EventEmitter2();
+var reqBus = new EventEmitter2();
 var responseBody = 'Yay proxied. Path';
 var remoteHostHeader = 'x-remote-host';
 var remoteHost = '127.0.0.1:7000';
 
 /*
- * Create a dummy remote host that Proxilate will forward requests to
+ * Create a dummy remote host that Proxilate will forward requests to.
+ * Fires a request event on the reqBus. Tests must listen and respond to this event
  */
 var targetServer = http.createServer(function(req, res) {
-  reqListener.emit('request', req);
+  reqBus.emit('request', req, res);
+}).listen(7000);
 
+// Respond with a 200
+function sendOkResponse(req, res) {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.write(responseBody);
   return res.end();
-}).listen(7000);
+}
+
+// Respond with an internal server error
+function sendErrorResponse(req, res) {
+  res.writeHead(500, { 'Content-Type': 'text/plain' });
+  return res.end();
+}
+
+
+function testRequest(method, path, responseHandler, cb) {
+  reqBus.once('request', responseHandler);
+  makeRequest('GET', remoteHost, '/some/path', cb);
+}
 
 // A helper function to make a proxy request
 function makeRequest(method, host, path, cb) {
@@ -41,32 +57,13 @@ function makeRequest(method, host, path, cb) {
 
   options.headers[remoteHostHeader] = host
 
-  async.parallel({
-    targetRequest: function(next) {
-      reqListener.once('request', function(request) {
-        next(null, request);
-      });
-    },
-    res: function(next) {
-      request(options, function(err, res, body) {
-        next(err, res);
-      });
-    }
-  }, function(err, results) {
-    cb(err, results.targetRequest, results.res);
-  })
-
+  request(options, cb);
 }
 
+// Validate a proxy request and response to be valid
 function expectValidProxy(done) {
-  return function(err, targetRequest, res) {
+  return function(err, res) {
     expect(err).to.equal(null);
-
-    // Ensure the host header was changed
-    expect(targetRequest.headers['host']).to.equal(remoteHost);
-
-    // Ensure we stripped the 'x-remote-host'
-    expect(targetRequest.headers[remoteHostHeader]).to.equal(undefined);
 
     // Did we get a valid response
     expect(res.statusCode).to.equal(200);
@@ -75,34 +72,51 @@ function expectValidProxy(done) {
   }
 }
 
-
 describe('Proxilate', function() {
-  it('should return 400 when a request is made without the "x-remote-host" header', function(done) {
-    request('http://127.0.0.1:9235/', function(err, res, body) {
-      expect(res.statusCode).to.equal(400);
-      done();
+  describe('Failed Proxy Attempts', function() {
+    it('should return 400 when a request is made without the "x-remote-host" header', function(done) {
+      request('http://127.0.0.1:9235/', function(err, res, body) {
+        expect(res.statusCode).to.equal(400);
+        done();
+      });
+    });
+
+    it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
+      makeRequest('GET', '127.1.0.1', '/some/path', function(err, res) {
+        expect(err).to.equal(null);
+        expect(res.statusCode).to.equal(404);
+        done();
+      });
+    });
+
+    it('should forward 500 GET requests', function(done) {
+      testRequest('GET', '/some/path', sendErrorResponse,  function(err, res) {
+        expect(err).to.equal(null);
+        expect(res.statusCode).to.equal(500);
+        done();
+      });
     });
   });
 
-  it('should forward GET requests', function(done) {
-    makeRequest('GET', remoteHost, '/some/path', expectValidProxy(done));
+  describe('Successful Proxy Attempts', function() {
+    it('should forward GET requests', function(done) {
+      testRequest('GET', '/some/path', sendOkResponse, expectValidProxy(done));
+    });
+
+    it('should forward POST requests', function(done) {
+      testRequest('POST', '/some/path', sendOkResponse, expectValidProxy(done));
+    });
+
+    it('should forward PUT requests', function(done) {
+      testRequest('PUT', '/some/path', sendOkResponse, expectValidProxy(done));
+    });
+
+    it('should forward PATCH requests', function(done) {
+      testRequest('PATCH', '/some/path', sendOkResponse, expectValidProxy(done));
+    });
+
+    it('should forward DELETE requests', function(done) {
+      testRequest('DELETE', '/some/path', sendOkResponse, expectValidProxy(done));
+    });
   });
-
-  it('should forward POST requests', function(done) {
-    makeRequest('POST', remoteHost, '/some/path', expectValidProxy(done));
-  });
-
-  it('should forward PUT requests', function(done) {
-    makeRequest('PUT', remoteHost, '/some/path', expectValidProxy(done));
-  });
-
-  it('should forward PATCH requests', function(done) {
-    makeRequest('PATCH', remoteHost, '/some/path', expectValidProxy(done));
-  });
-
-  it('should forward DELETE requests', function(done) {
-    makeRequest('DELETE', remoteHost, '/some/path', expectValidProxy(done));
-  });
-
-
 });
