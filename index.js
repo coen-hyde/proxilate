@@ -1,0 +1,59 @@
+'use strict'
+
+var httpProxy = require('http-proxy');
+var connect = require('connect');
+var _ = require('lodash');
+var url = require('url');
+
+/*
+ * Create a new Proxilate instance
+ *
+ * @param options {object} A hash of options given to proxilate
+ * @param options.port {integer} The port number to start proxilate on
+ */
+function Proxilate(options) {
+  if (!options) var options = {};
+  _.defaults(options, {
+    port: 9235
+  })
+
+  this.options = options;
+  this.server = connect();
+
+  var proxy = new httpProxy.createProxyServer();
+
+  // Middleware to perform the redirect
+  this.server.use(function (req, res) {
+    var forwardUrl = req.url.substr(1);
+    var forwardUrlInfo = url.parse(forwardUrl);
+
+    // URL to forward to must be absolute.
+    if (!forwardUrlInfo.protocol || !forwardUrlInfo.hostname) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.write('forward url must be absolute');
+      return res.end();
+    }
+
+    // Reset the request url. It will be set again by http-proxy
+    req.url = ''
+
+    // Proxy request
+    proxy.web(req, res, {
+      changeOrigin: true,
+      target: forwardUrl
+    });
+  });
+}
+
+/*
+ * Start the proxy
+ */
+Proxilate.prototype.start = function(cb) {
+  if (!cb) cb = function(){};
+
+  this.server.listen(this.options.port, cb);
+}
+
+module.exports = function() {
+  return new Proxilate();
+}

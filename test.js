@@ -6,8 +6,9 @@ var async = require('async');
 var EventEmitter2 = require('eventemitter2').EventEmitter2;
 var request = require('request');
 
-// Start the proxy
-require('./server');
+var proxilate = require('./');
+var proxy = proxilate();
+proxy.start();
 
 // An event bus that emits a request event when ever the
 // target/remote server receives a request
