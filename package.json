@@ -7,7 +7,8 @@
   "dependencies": {
     "connect": "^3.4.0",
     "http-proxy": "^1.11.1",
-    "lodash": "^3.9.3"
+    "lodash": "^3.9.3",
+    "yargs": "^3.14.0"
   },
   "devDependencies": {
     "async": "^1.2.1",

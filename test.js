@@ -8,7 +8,10 @@ var request = require('request');
 
 var proxilate = require('./');
 var proxy = proxilate();
-proxy.start();
+
+before(function(cb){
+  proxy.start(cb);
+})
 
 // An event bus that emits a request event when ever the
 // target/remote server receives a request

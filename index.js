@@ -50,8 +50,17 @@ function Proxilate(options) {
  */
 Proxilate.prototype.start = function(cb) {
   if (!cb) cb = function(){};
+  var options = this.options;
 
-  this.server.listen(this.options.port, cb);
+  this.server.listen(options.port, function(err) {
+    if (err) {
+      console.log('Failed to start Proxilate on port: '+options.port);
+      return cb(err);
+    }
+
+    console.log('Started Proxilate on port: '+options.port);
+    cb();
+  });
 }
 
 module.exports = function() {
