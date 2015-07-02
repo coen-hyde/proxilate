@@ -14,7 +14,7 @@ require('./server');
 var reqBus = new EventEmitter2();
 var responseBody = 'Yay proxied. Path';
 var remoteHostHeader = 'x-remote-host';
-var remoteHost = '127.0.0.1:7000';
+var remoteHost = 'http://127.0.0.1:7000';
 
 /*
  * Create a dummy remote host that Proxilate will forward requests to.
@@ -38,30 +38,29 @@ function sendErrorResponse(req, res) {
 }
 
 
-function testRequest(method, path, responseHandler, cb) {
+function testRequest(method, forwardUrl, responseHandler, cb) {
   reqBus.once('request', responseHandler);
-  makeRequest('GET', remoteHost, '/some/path', cb);
+  makeRequest(method, forwardUrl, cb);
 }
 
 // A helper function to make a proxy request
-function makeRequest(method, host, path, cb) {
-  if (!path) {
-    path = '/';
-  }
-
+function makeRequest(method, forwardUrl, cb) {
   var options = {
     method: method,
-    url: 'http://127.0.0.1:9235'+path,
+    url: 'http://127.0.0.1:9235/'+forwardUrl,
     headers: {}
   }
-
-  options.headers[remoteHostHeader] = host
 
   request(options, cb);
 }
 
 // Validate a proxy request and response to be valid
 function expectValidProxy(done) {
+  // Listen to request on receiving server
+  reqBus.once('request', function(req, res) {
+    expect(req.path)
+  });
+
   return function(err, res) {
     expect(err).to.equal(null);
 
@@ -82,7 +81,7 @@ describe('Proxilate', function() {
     });
 
     it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
-      makeRequest('GET', '127.1.0.1', '/some/path', function(err, res) {
+      makeRequest('GET', 'http://127.1.0.1/some/path', function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(404);
         done();
@@ -90,7 +89,7 @@ describe('Proxilate', function() {
     });
 
     it('should forward 500 GET requests', function(done) {
-      testRequest('GET', '/some/path', sendErrorResponse,  function(err, res) {
+      testRequest('GET', remoteHost+'/some/path', sendErrorResponse,  function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(500);
         done();
@@ -100,23 +99,23 @@ describe('Proxilate', function() {
 
   describe('Successful Proxy Attempts', function() {
     it('should forward GET requests', function(done) {
-      testRequest('GET', '/some/path', sendOkResponse, expectValidProxy(done));
+      testRequest('GET', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward POST requests', function(done) {
-      testRequest('POST', '/some/path', sendOkResponse, expectValidProxy(done));
+      testRequest('POST', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward PUT requests', function(done) {
-      testRequest('PUT', '/some/path', sendOkResponse, expectValidProxy(done));
+      testRequest('PUT', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward PATCH requests', function(done) {
-      testRequest('PATCH', '/some/path', sendOkResponse, expectValidProxy(done));
+      testRequest('PATCH', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward DELETE requests', function(done) {
-      testRequest('DELETE', '/some/path', sendOkResponse, expectValidProxy(done));
+      testRequest('DELETE', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
   });
 });

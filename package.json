@@ -6,7 +6,8 @@
   "main": "server.js",
   "dependencies": {
     "connect": "^3.4.0",
-    "http-proxy": "^1.11.1"
+    "http-proxy": "^1.11.1",
+    "lodash": "^3.9.3"
   },
   "devDependencies": {
     "async": "^1.2.1",

@@ -2,54 +2,31 @@
 
 var httpProxy = require('http-proxy');
 var connect = require('connect');
-var http = require('http');
+var _ = require('lodash');
 var url = require('url');
-
-/*
- * Create the Target url for the redirect
- *
- * Replaces the host in the request url with another
- *
- * @param req {object} The request object
- * @param remoteHost {string} The new remoteHost
- * @return {string}
- */
-function createTargetUrl(req, remoteHost) {
-  var protocol = (req.protocol)? req.protocol : 'http';
-  var hostname = remoteHost.split(':')[0];
-  var port = remoteHost.split(':')[1];
-
-  if (!port) {
-    port = (req.protocol === 'https')? 443 : 80;
-  }
-
-  var target = {
-    protocol: protocol,
-    hostname: hostname,
-    port: port
-  }
-
-  return url.format(target);
-}
 
 var server = connect();
 var proxy = new httpProxy.createProxyServer();
 
 // Middleware to perform the redirect
 server.use(function (req, res) {
-  var remoteHost = req.headers['x-remote-host'];
-  delete req.headers['x-remote-host'];
+  var forwardUrl = req.url.substr(1);
+  var forwardUrlInfo = url.parse(forwardUrl);
 
-  // If we do not have a remote host, then this request is invalid
-  if (!remoteHost) {
+  // URL to forward to must be absolute.
+  if (!forwardUrlInfo.protocol || !forwardUrlInfo.hostname) {
     res.writeHead(400, { 'Content-Type': 'text/plain' });
+    res.write('forward url must be absolute');
     return res.end();
   }
+
+  // Reset the request url. It will be set again by http-proxy
+  req.url = ''
 
   // Proxy request
   proxy.web(req, res, {
     changeOrigin: true,
-    target: createTargetUrl(req, remoteHost)
+    target: forwardUrl
   });
 });
 
