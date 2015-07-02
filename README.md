@@ -1,9 +1,17 @@
 Proxilate
 =========
 
-A simple proxy server for when you can not use a proxy server. Instead if you can make a request to this server with the `x-remote-host` header, specifying the host you want to communicate with.
+A simple proxy server
 
-Start the server:
-```$ node server.js```
+Installation
+------------
 
-The server listens on port 9235.
+```$ npm install -g proxilate```
+
+Usage
+-----
+
+Start the server
+```$ proxilate -p [port]```
+
+The server listens on port 9235 by default.

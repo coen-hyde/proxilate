@@ -1,8 +1,7 @@
 {
-  "private": true,
   "name": "proxilate",
   "version": "0.1.0",
-  "description": "A forward proxy for bugcrowd",
+  "description": "A forward proxy",
   "main": "server.js",
   "dependencies": {
     "connect": "^3.4.0",
@@ -19,7 +18,7 @@
   },
   "scripts": {
     "test": "mocha",
-    "start": "node server.js"
+    "start": "./bin/proxilate.js"
   },
   "author": "Coen Hyde"
 }
