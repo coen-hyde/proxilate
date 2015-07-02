@@ -24,7 +24,7 @@ function Proxilate(options) {
 
   // Middleware to perform the redirect
   this.server.use(function (req, res) {
-    var forwardUrl = req.url.substr(1);
+    var forwardUrl = req.originalUrl.substr(1);
     var forwardUrlInfo = url.parse(forwardUrl);
 
     // URL to forward to must be absolute.
@@ -34,13 +34,15 @@ function Proxilate(options) {
       return res.end();
     }
 
-    // Reset the request url. It will be set again by http-proxy
-    req.url = ''
+    var forwardPath = forwardUrl.substring(forwardUrl.indexOf(forwardUrlInfo.path));
+    req.url = forwardPath;
+
+    var forwardHost = forwardUrl.substring(0, forwardUrl.indexOf(forwardUrlInfo.path));
 
     // Proxy request
     proxy.web(req, res, {
       changeOrigin: true,
-      target: forwardUrl
+      target: forwardHost
     });
   });
 }

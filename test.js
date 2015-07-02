@@ -2,6 +2,7 @@
 
 var expect = require('expect.js');
 var http = require('http');
+var url = require('url');
 var async = require('async');
 var EventEmitter2 = require('eventemitter2').EventEmitter2;
 var request = require('request');
@@ -43,7 +44,15 @@ function sendErrorResponse(req, res) {
 
 
 function testRequest(method, forwardUrl, responseHandler, cb) {
-  reqBus.once('request', responseHandler);
+  var forwardUrlInfo = url.parse(forwardUrl);
+
+  reqBus.once('request', function(req) {
+    var forwardPath = forwardUrl.substring(forwardUrl.indexOf(forwardUrlInfo.path));
+    expect(req.url).to.equal(forwardPath);
+
+    responseHandler.apply(responseHandler, arguments);
+  });
+
   makeRequest(method, forwardUrl, cb);
 }
 
@@ -60,11 +69,6 @@ function makeRequest(method, forwardUrl, cb) {
 
 // Validate a proxy request and response to be valid
 function expectValidProxy(done) {
-  // Listen to request on receiving server
-  reqBus.once('request', function(req, res) {
-    expect(req.path)
-  });
-
   return function(err, res) {
     expect(err).to.equal(null);
 
@@ -104,6 +108,10 @@ describe('Proxilate', function() {
   describe('Successful Proxy Attempts', function() {
     it('should forward GET requests', function(done) {
       testRequest('GET', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+    });
+
+    it('should forward GET requests with query params', function(done) {
+      testRequest('GET', remoteHost+'/some/path?query=string', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward POST requests', function(done) {
