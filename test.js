@@ -48,7 +48,7 @@ function testRequest(method, forwardUrl, responseHandler, cb) {
   var requestor = makeRequestor(9235);
 
   reqBus.once('request', function(req) {
-    var forwardPath = forwardUrl.substring(forwardUrl.indexOf(forwardUrlInfo.path));
+    var forwardPath = forwardUrlInfo.path;
     expect(req.url).to.equal(forwardPath);
 
     responseHandler.apply(responseHandler, arguments);
@@ -121,7 +121,11 @@ describe('Proxilate', function() {
   });
 
   describe('Successful Proxy Attempts', function() {
-    it('should forward GET requests', function(done) {
+    it('should forward GET requests with no path', function(done) {
+      testRequest('GET', remoteHost+'/', sendOkResponse, expectValidProxy(done));
+    });
+
+    it('should forward GET requests with a path', function(done) {
       testRequest('GET', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
