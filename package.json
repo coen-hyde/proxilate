@@ -4,6 +4,7 @@
   "description": "A forward proxy",
   "main": "server.js",
   "dependencies": {
+    "basic-auth": "^1.0.3",
     "connect": "^3.4.0",
     "http-proxy": "^1.11.1",
     "lodash": "^3.9.3",

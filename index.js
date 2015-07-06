@@ -2,6 +2,7 @@
 
 var httpProxy = require('http-proxy');
 var connect = require('connect');
+var basicAuth = require('basic-auth');
 var _ = require('lodash');
 var url = require('url');
 
@@ -13,6 +14,7 @@ var url = require('url');
  */
 function Proxilate(options) {
   if (!options) var options = {};
+
   _.defaults(options, {
     port: 9235
   })
@@ -20,6 +22,29 @@ function Proxilate(options) {
   this.options = options;
   this.server = connect();
 
+  // Add Basic Auth if username or password is specified
+  if (this.options.username || this.options.password) {
+    this.server.use(function(req, res, next) {
+      var credentials = basicAuth(req);
+
+      // Return unauthorized if no credentials or invalid credentials
+      var unauthorized = (
+        !credentials ||
+        credentials.name !== options.username ||
+        credentials.pass !== options.password
+      );
+
+      if (unauthorized) {
+        res.statusCode = 401;
+        return res.end();
+      }
+
+      // Lets proxy
+      next();
+    });
+  }
+
+  // Setup proxy
   var proxy = new httpProxy.createProxyServer();
 
   // Middleware to perform the redirect
@@ -65,6 +90,6 @@ Proxilate.prototype.start = function(cb) {
   });
 }
 
-module.exports = function() {
-  return new Proxilate();
+module.exports = function(options) {
+  return new Proxilate(options);
 }

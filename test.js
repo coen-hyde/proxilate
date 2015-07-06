@@ -45,6 +45,7 @@ function sendErrorResponse(req, res) {
 
 function testRequest(method, forwardUrl, responseHandler, cb) {
   var forwardUrlInfo = url.parse(forwardUrl);
+  var requestor = makeRequestor(9235);
 
   reqBus.once('request', function(req) {
     var forwardPath = forwardUrl.substring(forwardUrl.indexOf(forwardUrlInfo.path));
@@ -53,19 +54,26 @@ function testRequest(method, forwardUrl, responseHandler, cb) {
     responseHandler.apply(responseHandler, arguments);
   });
 
-  makeRequest(method, forwardUrl, cb);
+  requestor(method, forwardUrl, cb);
 }
 
 // A helper function to make a proxy request
-function makeRequest(method, forwardUrl, cb) {
-  var options = {
-    method: method,
-    url: 'http://127.0.0.1:9235/'+forwardUrl,
-    headers: {}
-  }
+function makeRequestor(port) {
+  return function(method, forwardUrl, headers, cb) {
+    if (!cb) {
+      var cb = headers;
+      headers = {};
+    }
 
-  request(options, cb);
-}
+    var options = {
+      method: method,
+      url: 'http://127.0.0.1:'+port+'/'+forwardUrl,
+      headers: headers
+    }
+
+    request(options, cb);
+  }
+};
 
 // Validate a proxy request and response to be valid
 function expectValidProxy(done) {
@@ -79,6 +87,11 @@ function expectValidProxy(done) {
   }
 }
 
+// Remove all request event listeners after every test
+afterEach(function() {
+  reqBus.removeAllListeners('request');
+})
+
 describe('Proxilate', function() {
   describe('Failed Proxy Attempts', function() {
     it('should return 400 when a request is made without the "x-remote-host" header', function(done) {
@@ -89,7 +102,9 @@ describe('Proxilate', function() {
     });
 
     it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
-      makeRequest('GET', 'http://127.1.0.1/some/path', function(err, res) {
+      var requestor = makeRequestor(9235);
+
+      requestor('GET', 'http://127.1.0.1/some/path', function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(404);
         done();
@@ -130,4 +145,59 @@ describe('Proxilate', function() {
       testRequest('DELETE', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
   });
+
+  describe('Basic Auth', function() {
+    var newPort = proxy.options.port+1;
+    var username = 'bruce';
+    var password = 'batman';
+
+    var requestor = makeRequestor(newPort);
+    var proxyWithBasicAuth = proxilate({
+      port: newPort,
+      username: username,
+      password: password
+    });
+    var authorization = 'Basic '+new Buffer(username+':'+password).toString('base64');
+
+    before(function(cb) {
+      proxyWithBasicAuth.start(cb);
+    });
+
+    beforeEach(function() {
+      reqBus.once('request', sendOkResponse);
+    });
+
+    it('should return 401 when no authentication is provided', function(done) {
+      requestor('GET', remoteHost+'/some/path', function(err, res) {
+        expect(err).to.equal(null);
+        expect(res.statusCode).to.equal(401);
+        done();
+      });
+    });
+
+    it('should return 200 with valid credentials', function(done) {
+      var headers = {
+        'Authorization': authorization
+      }
+
+      requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
+        expect(err).to.equal(null);
+        expect(res.statusCode).to.equal(200);
+        done();
+      });
+    });
+
+    it('should return 401 with invalid credentials', function(done) {
+      var badAuthorization = 'Basic '+new Buffer('tony:pony').toString('hex');
+      var headers = {
+        'Authorization': badAuthorization
+      }
+
+      requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
+        expect(err).to.equal(null);
+        expect(res.statusCode).to.equal(401);
+        done();
+      });
+    });
+  })
 });
