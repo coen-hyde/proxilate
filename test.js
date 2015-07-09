@@ -206,5 +206,26 @@ describe('Proxilate', function() {
         });
       });
     });
+
+    describe('credentials in URL', function() {
+      var hostWithAuth = 'http://'+username+':'+password+'@127.0.0.1:'+newPort;
+      var requestorWithAuth = makeRequestor(hostWithAuth);
+
+      it('should return 200 with valid credentials', function(done) {
+        requestorWithAuth('GET', remoteHost+'/some/path', function(err, res) {
+          expect(err).to.equal(null);
+          expect(res.statusCode).to.equal(200);
+          done();
+        });
+      });
+
+      it('should return 401 with invalid credentials', function(done) {
+        requestor('GET', remoteHost+'/some/path', function(err, res) {
+          expect(err).to.equal(null);
+          expect(res.statusCode).to.equal(401);
+          done();
+        });
+      });
+    });
   });
 });
