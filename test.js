@@ -17,6 +17,7 @@ before(function(cb){
 // An event bus that emits a request event when ever the
 // target/remote server receives a request
 var reqBus = new EventEmitter2();
+var proxyHost = 'http://127.0.0.1:'+proxy.options.port;
 var responseBody = 'Yay proxied. Path';
 var remoteHostHeader = 'x-remote-host';
 var remoteHost = 'http://127.0.0.1:7000';
@@ -45,7 +46,7 @@ function sendErrorResponse(req, res) {
 
 function testRequest(method, forwardUrl, responseHandler, cb) {
   var forwardUrlInfo = url.parse(forwardUrl);
-  var requestor = makeRequestor(9235);
+  var requestor = makeRequestor(proxyHost);
 
   reqBus.once('request', function(req) {
     var forwardPath = forwardUrlInfo.path;
@@ -58,7 +59,7 @@ function testRequest(method, forwardUrl, responseHandler, cb) {
 }
 
 // A helper function to make a proxy request
-function makeRequestor(port) {
+function makeRequestor(proxyHost) {
   return function(method, forwardUrl, headers, cb) {
     if (!cb) {
       var cb = headers;
@@ -67,7 +68,7 @@ function makeRequestor(port) {
 
     var options = {
       method: method,
-      url: 'http://127.0.0.1:'+port+'/'+forwardUrl,
+      url: proxyHost+'/'+forwardUrl,
       headers: headers
     }
 
@@ -102,7 +103,7 @@ describe('Proxilate', function() {
     });
 
     it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
-      var requestor = makeRequestor(9235);
+      var requestor = makeRequestor(proxyHost);
 
       requestor('GET', 'http://127.1.0.1/some/path', function(err, res) {
         expect(err).to.equal(null);
@@ -155,13 +156,12 @@ describe('Proxilate', function() {
     var username = 'bruce';
     var password = 'batman';
 
-    var requestor = makeRequestor(newPort);
     var proxyWithBasicAuth = proxilate({
       port: newPort,
       username: username,
       password: password
     });
-    var authorization = 'Basic '+new Buffer(username+':'+password).toString('base64');
+    var requestor = makeRequestor('http://127.0.0.1:'+newPort);
 
     before(function(cb) {
       proxyWithBasicAuth.start(cb);
@@ -179,29 +179,32 @@ describe('Proxilate', function() {
       });
     });
 
-    it('should return 200 with valid credentials', function(done) {
-      var headers = {
-        'Authorization': authorization
-      }
+    describe('credentials in Authorization header', function() {
+      it('should return 200 with valid credentials', function(done) {
+        var authorization = 'Basic '+new Buffer(username+':'+password).toString('base64');
+        var headers = {
+          'Authorization': authorization
+        }
 
-      requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
-        expect(err).to.equal(null);
-        expect(res.statusCode).to.equal(200);
-        done();
+        requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
+          expect(err).to.equal(null);
+          expect(res.statusCode).to.equal(200);
+          done();
+        });
+      });
+
+      it('should return 401 with invalid credentials', function(done) {
+        var badAuthorization = 'Basic '+new Buffer('tony:pony').toString('hex');
+        var headers = {
+          'Authorization': badAuthorization
+        }
+
+        requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
+          expect(err).to.equal(null);
+          expect(res.statusCode).to.equal(401);
+          done();
+        });
       });
     });
-
-    it('should return 401 with invalid credentials', function(done) {
-      var badAuthorization = 'Basic '+new Buffer('tony:pony').toString('hex');
-      var headers = {
-        'Authorization': badAuthorization
-      }
-
-      requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
-        expect(err).to.equal(null);
-        expect(res.statusCode).to.equal(401);
-        done();
-      });
-    });
-  })
+  });
 });
