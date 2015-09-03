@@ -11,8 +11,14 @@ Installation
 Starting Proxilate
 ------------------
 
-Start the server
-```$ proxilate -p [port]```
+### Start the server
+```$ proxilate```
+
+### Options
+
+```
+Usage: $0 -p [port] --username=[username] --password=[password]
+```
 
 The server listens on port 9235 by default.
 
