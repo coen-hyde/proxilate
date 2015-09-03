@@ -11,7 +11,6 @@ Installation
 Starting Proxilate
 ------------------
 
-### Start the server
 ```$ proxilate```
 
 ### Options
