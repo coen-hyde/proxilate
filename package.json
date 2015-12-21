@@ -7,17 +7,17 @@
   "dependencies": {
     "basic-auth": "^1.0.3",
     "connect": "^3.4.0",
-    "http-proxy": "^1.11.1",
-    "lodash": "^3.9.3",
+    "http-proxy": "^1.12.0",
+    "lodash": "^3.10.1",
     "requirize": "^0.1.0",
-    "yargs": "^3.14.0"
+    "yargs": "^3.31.0"
   },
   "devDependencies": {
-    "async": "^1.2.1",
+    "async": "^1.5.0",
     "eventemitter2": "^0.4.14",
     "expect.js": "^0.3.1",
     "mocha": "^2.2.5",
-    "request": "^2.58.0"
+    "request": "^2.67.0"
   },
   "scripts": {
     "test": "mocha",
