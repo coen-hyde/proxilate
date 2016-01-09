@@ -23,6 +23,8 @@ function Proxilate(options) {
   this.options = options;
   this.server = connect();
 
+  this.server.use(mw.healthcheck());
+
   // Add Basic Auth if username or password is specified
   if (this.options.username || this.options.password) {
     this.server.use(mw.auth(this.options.username, this.options.password));

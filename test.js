@@ -94,6 +94,14 @@ afterEach(function() {
 })
 
 describe('Proxilate', function() {
+  it('should return 200 when a request is made to /healthcheck', function(done) {
+    request('http://127.0.0.1:9235/healthcheck', function(err, res, body) {
+      expect(res.statusCode).to.equal(200);
+      expect(res.body).to.equal("OK");
+      done();
+    });
+  });
+
   describe('Failed Proxy Attempts', function() {
     it('should return 400 when a request is made without the "x-remote-host" header', function(done) {
       request('http://127.0.0.1:9235/', function(err, res, body) {
