@@ -10,6 +10,7 @@
     "http-proxy": "^1.12.0",
     "lodash": "^3.10.1",
     "requirize": "^0.1.0",
+    "winston": "^2.1.1",
     "yargs": "^3.31.0"
   },
   "devDependencies": {

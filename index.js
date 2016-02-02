@@ -6,6 +6,11 @@ var connect = require('connect');
 var mw = require('./lib/middleware');
 var _ = require('lodash');
 var url = require('url');
+var winston = require('winston');
+
+winston.handleExceptions(new winston.transports.Console({
+  humanReadableUnhandledException: true
+}));
 
 /*
  * Create a new Proxilate instance
@@ -43,11 +48,11 @@ Proxilate.prototype.start = function(cb) {
 
   this.server.listen(options.port, function(err) {
     if (err) {
-      console.log('Failed to start Proxilate on port: '+options.port);
+      winston.info('Failed to start Proxilate on port: '+options.port);
       return cb(err);
     }
 
-    console.log('Started Proxilate on port: '+options.port);
+    winston.info('Started Proxilate on port: '+options.port);
     cb();
   });
 }
