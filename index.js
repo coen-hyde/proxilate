@@ -32,6 +32,7 @@ function Proxilate(options) {
 
   // Add Basic Auth if username or password is specified
   if (this.options.username || this.options.password) {
+    winston.info("Using Basic Auth");
     this.server.use(mw.auth(this.options.username, this.options.password));
   }
 

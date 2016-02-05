@@ -202,7 +202,7 @@ describe('Proxilate', function() {
       });
 
       it('should return 401 with invalid credentials', function(done) {
-        var badAuthorization = 'Basic '+new Buffer('tony:pony').toString('hex');
+        var badAuthorization = 'Basic '+new Buffer('tony:pony').toString('base64');
         var headers = {
           'Authorization': badAuthorization
         }
@@ -227,8 +227,11 @@ describe('Proxilate', function() {
         });
       });
 
+      var hostWithBadAuth = 'http://tony:pony@127.0.0.1:'+newPort;
+      var requestorWithBadAuth = makeRequestor(hostWithBadAuth);
+
       it('should return 401 with invalid credentials', function(done) {
-        requestor('GET', remoteHost+'/some/path', function(err, res) {
+        requestorWithBadAuth('GET', remoteHost+'/some/path', function(err, res) {
           expect(err).to.equal(null);
           expect(res.statusCode).to.equal(401);
           done();
