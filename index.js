@@ -2,7 +2,7 @@
 
 var httpProxy = require('http-proxy');
 var basicAuth = require('basic-auth');
-var connect = require('connect');
+var express = require('express');
 var mw = require('./lib/middleware');
 var _ = require('lodash');
 var url = require('url');
@@ -26,7 +26,7 @@ function Proxilate(options) {
   })
 
   this.options = options;
-  this.server = connect();
+  this.server = express();
 
   this.server.use(mw.healthcheck());
 
