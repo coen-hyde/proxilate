@@ -179,6 +179,10 @@ describe('Proxilate', function() {
       reqBus.once('request', sendOkResponse);
     });
 
+    after(function(cb) {
+      proxyWithBasicAuth.stop(cb);
+    });
+
     it('should return 401 when no authentication is provided', function(done) {
       requestor('GET', remoteHost+'/some/path', function(err, res) {
         expect(err).to.equal(null);
@@ -236,6 +240,45 @@ describe('Proxilate', function() {
           expect(res.statusCode).to.equal(401);
           done();
         });
+      });
+    });
+  });
+
+  describe('Forbidden Hosts', function() {
+    var newPort = proxy.options.port+1;
+
+    var proxyWithForbiddenHosts = proxilate({
+      port: newPort,
+      forbiddenHosts: ['google.com']
+    });
+
+    var requestor = makeRequestor('http://127.0.0.1:'+newPort);
+
+    before(function(cb) {
+      proxyWithForbiddenHosts.start(cb);
+    });
+
+    beforeEach(function() {
+      reqBus.once('request', sendOkResponse);
+    });
+
+    after(function(cb) {
+      proxyWithForbiddenHosts.stop(cb);
+    })
+
+    it('should return 200 for hosts not in the forbidden list', function(done) {
+      requestor('GET', remoteHost+'/', function(err, res) {
+        expect(err).to.equal(null);
+        expect(res.statusCode).to.equal(200);
+        done();
+      });
+    });
+
+    it('should return 403 for a host in the forbidden host list', function(done) {
+      requestor('GET', 'https://google.com/', function(err, res) {
+        expect(err).to.equal(null);
+        expect(res.statusCode).to.equal(403);
+        done();
       });
     });
   });

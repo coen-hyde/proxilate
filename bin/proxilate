@@ -6,6 +6,7 @@ var argv = require('yargs')
     .usage('Usage: $0 -p [port] --username=[username] --password=[password]')
     .describe('username', 'BasicAuth username')
     .describe('password', 'BasicAuth password')
+    .describe('forbidden-hosts', 'A list of comma delimited hosts that external requests can not access')
     .help('h')
     .alias('h', 'help')
     .option('p', {
@@ -18,6 +19,11 @@ var argv = require('yargs')
     })
     .argv;
 
-var options = _.pick(argv, ['port', 'username', 'password']);
+var options = _.pick(argv, ['port', 'username', 'password', 'forbiddenHosts']);
+
+if (options.forbiddenHosts) {
+  options.forbiddenHosts = options.forbiddenHosts.split(',');
+};
+
 var proxy = proxilate(options);
 proxy.start();

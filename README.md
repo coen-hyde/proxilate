@@ -16,7 +16,7 @@ Starting Proxilate
 ### Options
 
 ```
-Usage: $0 -p [port] --username=[username] --password=[password]
+Usage: $0 -p [port] --username=[username] --password=[password] --forbidden-hosts[list of comma delimited forbidden hosts]
 ```
 
 The server listens on port 9235 by default.

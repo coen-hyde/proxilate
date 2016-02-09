@@ -21,7 +21,7 @@
     "request": "^2.67.0"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "NODE_ENV=test mocha",
     "start": "./bin/proxilate.js"
   },
   "author": "Coen Hyde"
