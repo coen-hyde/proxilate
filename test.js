@@ -157,6 +157,19 @@ describe('Proxilate', function() {
     it('should forward DELETE requests', function(done) {
       testRequest('DELETE', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
+
+    it('should forward requests to target server with Basic Auth', function(done) {
+      var listen_response = function(req, res) {
+        // Ensure Basic Auth was forwarded
+        expect(req.headers['authorization']).to.eql('Basic Ym9iOmNhdA==');
+
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.write(responseBody);
+        return res.end();
+      }
+
+      testRequest('GET', 'http://bob:cat@127.0.0.1:7000/', listen_response, expectValidProxy(done));
+    });
   });
 
   describe('Basic Auth', function() {
