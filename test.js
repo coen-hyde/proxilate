@@ -6,6 +6,7 @@ var url = require('url');
 var async = require('async');
 var EventEmitter2 = require('eventemitter2').EventEmitter2;
 var request = require('request');
+var _ = require('lodash');
 
 var proxilate = require('./');
 var proxy = proxilate();
@@ -44,7 +45,12 @@ function sendErrorResponse(req, res) {
 }
 
 
-function testRequest(method, forwardUrl, responseHandler, cb) {
+function testProxyRequest(method, forwardUrl, responseHandler, headers, cb) {
+  if (_.isFunction(headers)) {
+    cb = headers;
+    headers = {};
+  }
+
   var forwardUrlInfo = url.parse(forwardUrl);
   var requestor = makeRequestor(proxyHost);
 
@@ -55,7 +61,7 @@ function testRequest(method, forwardUrl, responseHandler, cb) {
     responseHandler.apply(responseHandler, arguments);
   });
 
-  requestor(method, forwardUrl, cb);
+  requestor(method, forwardUrl, headers, cb);
 }
 
 // A helper function to make a proxy request
@@ -95,7 +101,7 @@ afterEach(function() {
 
 describe('Proxilate', function() {
   it('should return 200 when a request is made to /healthcheck', function(done) {
-    request('http://127.0.0.1:9235/healthcheck', function(err, res, body) {
+    request(proxyHost+'/healthcheck', function(err, res, body) {
       expect(res.statusCode).to.equal(200);
       expect(res.body).to.equal("OK");
       done();
@@ -104,16 +110,16 @@ describe('Proxilate', function() {
 
   describe('Failed Proxy Attempts', function() {
     it('should return 400 when a request is made without the "x-remote-host" header', function(done) {
-      request('http://127.0.0.1:9235/', function(err, res, body) {
+      request(proxyHost, function(err, res, body) {
         expect(res.statusCode).to.equal(400);
         done();
       });
     });
 
     it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
-      var requestor = makeRequestor(proxyHost);
+      var proxy = makeRequestor(proxyHost);
 
-      requestor('GET', 'http://127.1.0.1/some/path', function(err, res) {
+      proxy('GET', 'http://127.1.0.1/some/path', function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(404);
         done();
@@ -121,7 +127,7 @@ describe('Proxilate', function() {
     });
 
     it('should forward 500 GET requests', function(done) {
-      testRequest('GET', remoteHost+'/some/path', sendErrorResponse,  function(err, res) {
+      testProxyRequest('GET', remoteHost+'/some/path', sendErrorResponse, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(500);
         done();
@@ -131,31 +137,31 @@ describe('Proxilate', function() {
 
   describe('Successful Proxy Attempts', function() {
     it('should forward GET requests with no path', function(done) {
-      testRequest('GET', remoteHost+'/', sendOkResponse, expectValidProxy(done));
+      testProxyRequest('GET', remoteHost+'/', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward GET requests with a path', function(done) {
-      testRequest('GET', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest('GET', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward GET requests with query params', function(done) {
-      testRequest('GET', remoteHost+'/some/path?query=string', sendOkResponse, expectValidProxy(done));
+      testProxyRequest('GET', remoteHost+'/some/path?query=string', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward POST requests', function(done) {
-      testRequest('POST', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest('POST', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward PUT requests', function(done) {
-      testRequest('PUT', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest('PUT', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward PATCH requests', function(done) {
-      testRequest('PATCH', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest('PATCH', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward DELETE requests', function(done) {
-      testRequest('DELETE', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest('DELETE', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
     });
 
     it('should forward requests to target server with Basic Auth', function(done) {
@@ -168,7 +174,20 @@ describe('Proxilate', function() {
         return res.end();
       }
 
-      testRequest('GET', 'http://bob:cat@127.0.0.1:7000/', listen_response, expectValidProxy(done));
+      testProxyRequest('GET', 'http://bob:cat@127.0.0.1:7000/', listen_response, expectValidProxy(done));
+    });
+
+    it('should forward arbitary request headers', function(done) {
+      var listen_response = function(req, res) {
+        // Ensure Basic Auth was forwarded
+        expect(req.headers['x-test']).to.eql('batman');
+
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.write(responseBody);
+        return res.end();
+      }
+
+      testProxyRequest('GET', 'http://bob:cat@127.0.0.1:7000/', listen_response, {'x-test': 'batman'}, expectValidProxy(done));
     });
   });
 
@@ -177,11 +196,13 @@ describe('Proxilate', function() {
     var username = 'bruce';
     var password = 'batman';
 
+    // Create new Proxy Instance with Basic Auth enabled
     var proxyWithBasicAuth = proxilate({
       port: newPort,
       username: username,
       password: password
     });
+
     var requestor = makeRequestor('http://127.0.0.1:'+newPort);
 
     before(function(cb) {
