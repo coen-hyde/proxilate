@@ -4,6 +4,7 @@ var httpProxy = require('http-proxy');
 var basicAuth = require('basic-auth');
 var express = require('express');
 var mw = require('./lib/middleware');
+var async = require('async');
 var _ = require('lodash');
 var url = require('url');
 var winston = require('winston');
@@ -30,6 +31,7 @@ function Proxilate(options) {
   });
 
   this.options = options;
+  this.hooks = {};
   this.proxy = express();
 
   this.proxy.use(mw.healthcheck());
@@ -44,7 +46,7 @@ function Proxilate(options) {
   this.proxy.use(mw.forbiddenhosts(options.forbiddenHosts));
 
   // Add Proxy Middleware
-  this.proxy.use(mw.proxy());
+  this.proxy.use(mw.proxy(this));
 }
 
 /*
@@ -81,6 +83,44 @@ Proxilate.prototype.stop = function(cb) {
     winston.info('Stopped Proxilate');
     cb();
   });
+}
+
+/*
+ * Register a hook
+ *
+ * @param name {string} The id of the hook
+ * @param hook {function} The function to execute
+ */
+Proxilate.prototype.register = function(name, hook) {
+  if (!_.isArray(this.hooks[name])) {
+    this.hooks[name] = [];
+  }
+
+  this.hooks[name].push(hook);
+}
+
+/*
+ * Execute a hook
+ *
+ * @param name {string} The id of the hook
+ * @param args {array} Arguments to pass to each executed hook function
+ * @param args {function} Callback
+ */
+Proxilate.prototype.execHook = function(name, args, cb) {
+  if (!_.isArray(this.hooks[name]) || this.hooks[name].length === 0) {
+    return cb();
+  }
+
+  async.each(this.hooks[name], function(func, next) {
+    var newArgs = [];
+
+    args.forEach(function (arg) {
+      newArgs.push(arg);
+    });
+    newArgs.push(next);
+
+    func.apply(null, newArgs);
+  }, cb);
 }
 
 module.exports = function(options) {
