@@ -49,6 +49,11 @@ function sendErrorResponse(req, res) {
   return res.end();
 }
 
+// Respond with an internal server error
+function sendTeapotResponse(req, res) {
+  res.writeHead(418, { 'Content-Type': 'text/plain' });
+  return res.end();
+}
 
 function testProxyRequest(method, forwardUrl, responseHandler, headers, cb) {
   if (_.isFunction(headers)) {
@@ -105,6 +110,7 @@ module.exports = {
   proxyHost: proxyHost,
   sendOkResponse: sendOkResponse,
   sendErrorResponse: sendErrorResponse,
+  sendTeapotResponse: sendTeapotResponse,
   testProxyRequest: testProxyRequest,
   makeRequestor: makeRequestor,
   expectValidProxy: expectValidProxy,
