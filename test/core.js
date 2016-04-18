@@ -24,15 +24,8 @@ describe('Core Functionionality', function() {
       done();
     });
   });
-
+  
   describe('Failed Proxy Attempts', function() {
-    it('should return 400 when a request is made without the "x-remote-host" header', function(done) {
-      request(proxyHost, function(err, res, body) {
-        expect(res.statusCode).to.equal(400);
-        done();
-      });
-    });
-
     it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
       var proxy = makeRequestor(proxyHost);
 
