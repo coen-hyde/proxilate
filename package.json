@@ -1,10 +1,11 @@
 {
   "name": "proxilate",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A forward proxy",
   "main": "index.js",
   "bin": "./bin/proxilate",
   "dependencies": {
+    "async": "^1.5.2",
     "basic-auth": "^1.0.3",
     "express": "^4.13.4",
     "http-proxy": "^1.12.0",
@@ -14,7 +15,6 @@
     "yargs": "^3.31.0"
   },
   "devDependencies": {
-    "async": "^1.5.0",
     "eventemitter2": "^0.4.14",
     "expect.js": "^0.3.1",
     "mocha": "^2.2.5",
