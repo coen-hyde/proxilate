@@ -8,6 +8,7 @@ var async = require('async');
 var _ = require('lodash');
 var url = require('url');
 var winston = require('winston');
+var reqLogger = require('./lib/request-logger');
 
 // Handle uncaught exceptions except when we are in test mode
 if (process.env.NODE_ENV !== 'test') {
@@ -107,6 +108,9 @@ Proxilate.prototype.register = function(name, hook) {
  * @param args {function} Callback
  */
 Proxilate.prototype.execHook = function(name, args, cb) {
+  var req = args[0];
+  var res = args[1];
+
   if (!_.isArray(this.hooks[name]) || this.hooks[name].length === 0) {
     return cb();
   }
@@ -117,7 +121,16 @@ Proxilate.prototype.execHook = function(name, args, cb) {
     args.forEach(function (arg) {
       newArgs.push(arg);
     });
-    newArgs.push(next);
+
+    newArgs.push(function(err) {
+      if (err) {
+        reqLogger('error', req, 'Failed to exectute hook \''+name+'\'. '+err.message);
+        res.status(500).send();
+        return;
+      }
+
+      return next();
+    });
 
     func.apply(null, newArgs);
   }, cb);

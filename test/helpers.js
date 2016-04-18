@@ -104,6 +104,20 @@ function expectValidProxy(done) {
   }
 }
 
+function newProxy(options) {
+  var newPort = proxy.options.port+1;
+  options = options || {};
+
+  _.defaults(options, {
+    port: newPort
+  });
+
+  // Create new Proxy Instance with a hooks
+  var newProxy = proxilate(options);
+
+  return proxy;
+}
+
 module.exports = {
   reqBus: reqBus,
   proxy: proxy,
@@ -115,5 +129,6 @@ module.exports = {
   makeRequestor: makeRequestor,
   expectValidProxy: expectValidProxy,
   responseBody: responseBody,
-  remoteHost: remoteHost
+  remoteHost: remoteHost,
+  newProxy: newProxy
 }
