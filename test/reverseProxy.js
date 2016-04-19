@@ -43,7 +43,7 @@ describe('Reverse Proxy', function() {
   });
 
   it('should forward GET requests with no path', function(done) {
-    requestor('GET', '/', function(err, res) {
+    requestor('GET', '', function(err, res) {
       expect(err).to.equal(null);
       expect(res.statusCode).to.equal(418);
       done();
