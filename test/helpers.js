@@ -43,6 +43,13 @@ function sendOkResponse(req, res) {
   return res.end();
 }
 
+// Respond with a 200 and echo back the request body
+function sendEchoResponse(req, res) {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.write(req.body);
+  return res.end();
+}
+
 // Respond with an internal server error
 function sendErrorResponse(req, res) {
   res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -55,8 +62,13 @@ function sendTeapotResponse(req, res) {
   return res.end();
 }
 
-function testProxyRequest(method, forwardUrl, responseHandler, headers, cb) {
+function testProxyRequest(method, forwardUrl, responseHandler, headers, cb, body) {
+  // Make headers options
   if (_.isFunction(headers)) {
+    // Make callback optional
+    if (_.isString(cb)) {
+      body = cb;
+    }
     cb = headers;
     headers = {};
   }
@@ -71,13 +83,16 @@ function testProxyRequest(method, forwardUrl, responseHandler, headers, cb) {
     responseHandler.apply(responseHandler, arguments);
   });
 
-  requestor(method, forwardUrl, headers, cb);
+  requestor(method, forwardUrl, headers, cb, body);
 }
 
 // A helper function to make a proxy request
 function makeRequestor(proxyHost) {
-  return function(method, forwardUrl, headers, cb) {
-    if (!cb) {
+  return function(method, forwardUrl, headers, cb, body) {
+    if (_.isFunction(headers)) {
+      if (_.isString(cb)) {
+        body = cb;
+      }
       var cb = headers;
       headers = {};
     }
@@ -88,18 +103,23 @@ function makeRequestor(proxyHost) {
       headers: headers
     }
 
+    if (body) {
+      options['body'] = body;
+      options['headers']['Content-Type'] = 'text/plain';
+    }
+
     request(options, cb);
   }
 };
 
 // Validate a proxy request and response to be valid
-function expectValidProxy(done) {
+function expectValidProxy(done, expectedBody) {
   return function(err, res) {
     expect(err).to.equal(null);
 
     // Did we get a valid response
     expect(res.statusCode).to.equal(200);
-    expect(res.body).to.equal(responseBody);
+    expect(res.body).to.equal(expectedBody || responseBody);
     done();
   }
 }
@@ -123,6 +143,7 @@ module.exports = {
   proxy: proxy,
   proxyHost: proxyHost,
   sendOkResponse: sendOkResponse,
+  sendEchoResponse: sendEchoResponse,
   sendErrorResponse: sendErrorResponse,
   sendTeapotResponse: sendTeapotResponse,
   testProxyRequest: testProxyRequest,

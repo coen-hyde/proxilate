@@ -15,6 +15,7 @@ var expectValidProxy = helpers.expectValidProxy;
 var responseBody = helpers.responseBody;
 var sendErrorResponse = helpers.sendErrorResponse;
 var sendOkResponse = helpers.sendOkResponse;
+var sendEchoResponse = helpers.sendEchoResponse;
 
 describe('Core Functionionality', function() {
   it('should return 200 when a request is made to /healthcheck', function(done) {
@@ -60,6 +61,11 @@ describe('Core Functionionality', function() {
 
     it('should forward POST requests', function(done) {
       testProxyRequest('POST', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+    });
+
+    it('should forward POST requests when body is included as well', function(done) {
+      response = 'testing response'
+      testProxyRequest('POST', remoteHost+'/some/path', sendEchoResponse, expectValidProxy(done, response), response);
     });
 
     it('should forward PUT requests', function(done) {

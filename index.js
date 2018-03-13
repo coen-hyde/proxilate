@@ -3,6 +3,7 @@
 var httpProxy = require('http-proxy');
 var basicAuth = require('basic-auth');
 var express = require('express');
+var bodyParser = require('body-parser');
 var mw = require('./lib/middleware');
 var async = require('async');
 var _ = require('lodash');
@@ -45,6 +46,8 @@ function Proxilate(options) {
 
   // Restrict access to forbidden hosts
   this.proxy.use(mw.forbiddenhosts(options.forbiddenHosts));
+
+  this.proxy.use(bodyParser.text({type: '*/*'}))
 
   // Add Proxy Middleware
   this.proxy.use(mw.proxy(this));
