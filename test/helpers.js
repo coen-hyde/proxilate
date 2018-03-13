@@ -75,15 +75,19 @@ function testProxyRequest(method, forwardUrl, responseHandler, headers, cb, body
     var forwardPath = forwardUrlInfo.path;
     expect(req.url).to.equal(forwardPath);
 
+    if (body) {
+      req.body = body
+    }
+
     responseHandler.apply(responseHandler, arguments);
   });
 
-  requestor(method, forwardUrl, headers, cb, body);
+  requestor(method, forwardUrl, headers, cb);
 }
 
 // A helper function to make a proxy request
 function makeRequestor(proxyHost) {
-  return function(method, forwardUrl, headers, cb, body) {
+  return function(method, forwardUrl, headers, cb) {
     if (!cb) {
       var cb = headers;
       headers = {};
@@ -93,10 +97,6 @@ function makeRequestor(proxyHost) {
       method: method,
       url: proxyHost+'/'+forwardUrl,
       headers: headers
-    }
-
-    if (body) {
-      options['body'] = body
     }
 
     request(options, cb);
