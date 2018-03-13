@@ -63,7 +63,12 @@ function sendTeapotResponse(req, res) {
 }
 
 function testProxyRequest(method, forwardUrl, responseHandler, headers, cb, body) {
+  // Make headers options
   if (_.isFunction(headers)) {
+    // Make callback optional
+    if (_.isString(cb)) {
+      body = cb;
+    }
     cb = headers;
     headers = {};
   }
@@ -75,20 +80,19 @@ function testProxyRequest(method, forwardUrl, responseHandler, headers, cb, body
     var forwardPath = forwardUrlInfo.path;
     expect(req.url).to.equal(forwardPath);
 
-    if (body) {
-      req.body = body
-    }
-
     responseHandler.apply(responseHandler, arguments);
   });
 
-  requestor(method, forwardUrl, headers, cb);
+  requestor(method, forwardUrl, headers, cb, body);
 }
 
 // A helper function to make a proxy request
 function makeRequestor(proxyHost) {
-  return function(method, forwardUrl, headers, cb) {
-    if (!cb) {
+  return function(method, forwardUrl, headers, cb, body) {
+    if (_.isFunction(headers)) {
+      if (_.isString(cb)) {
+        body = cb;
+      }
       var cb = headers;
       headers = {};
     }
@@ -97,6 +101,11 @@ function makeRequestor(proxyHost) {
       method: method,
       url: proxyHost+'/'+forwardUrl,
       headers: headers
+    }
+
+    if (body) {
+      options['body'] = body;
+      options['headers']['Content-Type'] = 'text/plain';
     }
 
     request(options, cb);
