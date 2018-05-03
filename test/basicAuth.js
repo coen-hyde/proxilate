@@ -45,7 +45,7 @@ describe('Basic Auth', function() {
   });
 
   it('should return 401 when no authentication is provided', function(done) {
-    requestor('GET', remoteHost+'/some/path', function(err, res) {
+    requestor({ method: 'GET', url: remoteHost+'/some/path'}, function(err, res) {
       expect(err).to.equal(null);
       expect(res.statusCode).to.equal(401);
       done();
@@ -59,7 +59,7 @@ describe('Basic Auth', function() {
         'Authorization': authorization
       }
 
-      requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
+      requestor({ method: 'GET', url: remoteHost+'/some/path', headers: headers}, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(200);
         done();
@@ -72,7 +72,7 @@ describe('Basic Auth', function() {
         'Authorization': badAuthorization
       }
 
-      requestor('GET', remoteHost+'/some/path', headers, function(err, res) {
+      requestor({ method: 'GET', url: remoteHost+'/some/path', headers: headers}, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(401);
         done();
@@ -85,7 +85,7 @@ describe('Basic Auth', function() {
     var requestorWithAuth = makeRequestor(hostWithAuth);
 
     it('should return 200 with valid credentials', function(done) {
-      requestorWithAuth('GET', remoteHost+'/some/path', function(err, res) {
+      requestorWithAuth({ method: 'GET', url: remoteHost+'/some/path'}, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(200);
         done();
@@ -96,7 +96,7 @@ describe('Basic Auth', function() {
     var requestorWithBadAuth = makeRequestor(hostWithBadAuth);
 
     it('should return 401 with invalid credentials', function(done) {
-      requestorWithBadAuth('GET', remoteHost+'/some/path', function(err, res) {
+      requestorWithBadAuth({ method: 'GET', url: remoteHost+'/some/path'}, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(401);
         done();

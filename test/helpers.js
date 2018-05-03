@@ -8,8 +8,13 @@ var EventEmitter2 = require('eventemitter2').EventEmitter2;
 var request = require('request');
 var _ = require('lodash');
 
+var express = require('express');
+var bodyParser = require('body-parser');
+
 var proxilate = require('../');
-var proxy = proxilate();
+var proxy = proxilate({
+  proxyTimeout: 1000
+});
 
 // An event bus that emits a request event when ever the
 // target/remote server receives a request
@@ -31,15 +36,30 @@ afterEach(function() {
  * Create a dummy remote host that Proxilate will forward requests to.
  * Fires a request event on the reqBus. Tests must listen and respond to this event
  */
-var targetServer = http.createServer(function(req, res) {
-  reqBus.emit('request', req, res);
-}).listen(7000);
 
+var targetServer = express();
+targetServer.use(bodyParser.text({type: '*/*'}));
+targetServer.all('/*', function(req, res, next) {
+  reqBus.emit('request', req, res);
+});
+
+targetServer.listen(7000, function() {
+  console.log('Started backend on port: '+7000);
+});
 
 // Respond with a 200
 function sendOkResponse(req, res) {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.write(responseBody);
+  return res.end();
+}
+
+// Respond with a 200 and echo back the request body
+function sendEchoResponse(req, res) {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  if (req.body) {
+    res.write(req.body);
+  }
   return res.end();
 }
 
@@ -55,52 +75,77 @@ function sendTeapotResponse(req, res) {
   return res.end();
 }
 
-function testProxyRequest(method, forwardUrl, responseHandler, headers, cb) {
-  if (_.isFunction(headers)) {
-    cb = headers;
-    headers = {};
-  }
+// function testProxyRequest(method, forwardUrl, responseHandler, headers, cb, body) {
+function testProxyRequest(options, cb) {
+  // Make headers options
+  // if (_.isFunction(headers)) {
+  //   // Make callback optional
+  //   if (_.isString(cb)) {
+  //     body = cb;
+  //   }
+  //   cb = headers;
+  //   headers = {};
+  // }
 
-  var forwardUrlInfo = url.parse(forwardUrl);
+  var forwardUrlInfo = url.parse(options.url);
   var requestor = makeRequestor(proxyHost);
 
   reqBus.once('request', function(req) {
     var forwardPath = forwardUrlInfo.path;
     expect(req.url).to.equal(forwardPath);
 
-    responseHandler.apply(responseHandler, arguments);
+    options.responseHandler.apply(options.responseHandler, arguments);
   });
 
-  requestor(method, forwardUrl, headers, cb);
+  // requestor(method, forwardUrl, headers, cb, body);
+  requestor(options, cb);
 }
 
 // A helper function to make a proxy request
 function makeRequestor(proxyHost) {
-  return function(method, forwardUrl, headers, cb) {
-    if (!cb) {
-      var cb = headers;
-      headers = {};
+  // return function(method, forwardUrl, headers, cb, body) {
+  return function(options, cb) {
+    _.defaults(options, {
+      headers: {}
+    });
+
+    // if (_.isFunction(headers)) {
+    //   if (_.isString(cb)) {
+    //     body = cb;
+    //   }
+    //   var cb = headers;
+    //   headers = {};
+    // }
+
+    var params = {
+      method: options.method,
+      url: proxyHost+'/'+options.url,
+      headers: options.headers,
     }
 
-    var options = {
-      method: method,
-      url: proxyHost+'/'+forwardUrl,
-      headers: headers
+    if (options.body) {
+      params.body = options.body;
+      params.headers['Content-Type'] = 'text/plain';
     }
 
-    request(options, cb);
+    request(params, cb);
   }
 };
 
 // Validate a proxy request and response to be valid
-function expectValidProxy(done) {
+function expectValidProxy(body, cb) {
+  if (_.isFunction(body)) {
+    cb = body
+    body = undefined
+  }
+
   return function(err, res) {
     expect(err).to.equal(null);
 
     // Did we get a valid response
     expect(res.statusCode).to.equal(200);
-    expect(res.body).to.equal(responseBody);
-    done();
+    if (body) expect(res.body).to.equal(body);
+    cb();
   }
 }
 
@@ -123,6 +168,7 @@ module.exports = {
   proxy: proxy,
   proxyHost: proxyHost,
   sendOkResponse: sendOkResponse,
+  sendEchoResponse: sendEchoResponse,
   sendErrorResponse: sendErrorResponse,
   sendTeapotResponse: sendTeapotResponse,
   testProxyRequest: testProxyRequest,

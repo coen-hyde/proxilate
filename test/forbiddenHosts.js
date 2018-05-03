@@ -41,7 +41,7 @@ describe('Forbidden Hosts', function() {
   })
 
   it('should return 200 for hosts not in the forbidden list', function(done) {
-    requestor('GET', remoteHost+'/', function(err, res) {
+    requestor({ method: 'GET', url: remoteHost+'/' }, function(err, res) {
       expect(err).to.equal(null);
       expect(res.statusCode).to.equal(200);
       done();
@@ -49,7 +49,7 @@ describe('Forbidden Hosts', function() {
   });
 
   it('should return 403 for a host in the forbidden host list', function(done) {
-    requestor('GET', 'https://google.com/', function(err, res) {
+    requestor({ method: 'GET', url: 'https://google.com/' }, function(err, res) {
       expect(err).to.equal(null);
       expect(res.statusCode).to.equal(403);
       done();
