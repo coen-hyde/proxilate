@@ -27,12 +27,11 @@ describe('Core Functionionality', function() {
   });
 
   describe('Failed Proxy Attempts', function() {
-    it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
+    it('should return 504 when backend request timesout', function(done) {
       var proxy = makeRequestor(proxyHost);
-
       proxy({ method: 'GET', url: 'http://127.1.0.1/some/path'}, function(err, res) {
         expect(err).to.equal(null);
-        expect(res.statusCode).to.equal(404);
+        expect(res.statusCode).to.equal(504);
         done();
       });
     });

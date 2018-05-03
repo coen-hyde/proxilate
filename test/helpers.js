@@ -12,7 +12,9 @@ var express = require('express');
 var bodyParser = require('body-parser');
 
 var proxilate = require('../');
-var proxy = proxilate();
+var proxy = proxilate({
+  proxyTimeout: 1000
+});
 
 // An event bus that emits a request event when ever the
 // target/remote server receives a request

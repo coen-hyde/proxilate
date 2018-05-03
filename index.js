@@ -29,7 +29,8 @@ function Proxilate(options) {
 
   _.defaults(options, {
     port: 9235,
-    forbiddenHosts: []
+    forbiddenHosts: [],
+    proxyTimeout: 15000
   });
 
   this.options = options;
