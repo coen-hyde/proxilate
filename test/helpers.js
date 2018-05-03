@@ -62,53 +62,60 @@ function sendTeapotResponse(req, res) {
   return res.end();
 }
 
-function testProxyRequest(method, forwardUrl, responseHandler, headers, cb, body) {
+// function testProxyRequest(method, forwardUrl, responseHandler, headers, cb, body) {
+function testProxyRequest(options, cb) {
   // Make headers options
-  if (_.isFunction(headers)) {
-    // Make callback optional
-    if (_.isString(cb)) {
-      body = cb;
-    }
-    cb = headers;
-    headers = {};
-  }
+  // if (_.isFunction(headers)) {
+  //   // Make callback optional
+  //   if (_.isString(cb)) {
+  //     body = cb;
+  //   }
+  //   cb = headers;
+  //   headers = {};
+  // }
 
-  var forwardUrlInfo = url.parse(forwardUrl);
+  var forwardUrlInfo = url.parse(options.url);
   var requestor = makeRequestor(proxyHost);
 
   reqBus.once('request', function(req) {
     var forwardPath = forwardUrlInfo.path;
     expect(req.url).to.equal(forwardPath);
 
-    responseHandler.apply(responseHandler, arguments);
+    options.responseHandler.apply(options.responseHandler, arguments);
   });
 
-  requestor(method, forwardUrl, headers, cb, body);
+  // requestor(method, forwardUrl, headers, cb, body);
+  requestor(options, cb);
 }
 
 // A helper function to make a proxy request
 function makeRequestor(proxyHost) {
-  return function(method, forwardUrl, headers, cb, body) {
-    if (_.isFunction(headers)) {
-      if (_.isString(cb)) {
-        body = cb;
-      }
-      var cb = headers;
-      headers = {};
+  // return function(method, forwardUrl, headers, cb, body) {
+  return function(options, cb) {
+    _.defaults(options, {
+      headers: {}
+    });
+
+    // if (_.isFunction(headers)) {
+    //   if (_.isString(cb)) {
+    //     body = cb;
+    //   }
+    //   var cb = headers;
+    //   headers = {};
+    // }
+
+    var params = {
+      method: options.method,
+      url: proxyHost+'/'+options.url,
+      headers: options.headers
     }
 
-    var options = {
-      method: method,
-      url: proxyHost+'/'+forwardUrl,
-      headers: headers
-    }
-
-    if (body) {
-      options['body'] = body;
+    if (options.body) {
+      options['body'] = options.body;
       options['headers']['Content-Type'] = 'text/plain';
     }
 
-    request(options, cb);
+    request(params, cb);
   }
 };
 

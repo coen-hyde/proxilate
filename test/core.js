@@ -19,18 +19,18 @@ var sendEchoResponse = helpers.sendEchoResponse;
 
 describe('Core Functionionality', function() {
   it('should return 200 when a request is made to /healthcheck', function(done) {
-    request(proxyHost+'/healthcheck', function(err, res, body) {
+    request({ method: 'GET', url: proxyHost+'/healthcheck'}, function(err, res, body) {
       expect(res.statusCode).to.equal(200);
       expect(res.body).to.equal("OK");
       done();
     });
   });
-  
+
   describe('Failed Proxy Attempts', function() {
     it('should return 404 when attempting to make contact with a server that does not exist', function(done) {
       var proxy = makeRequestor(proxyHost);
 
-      proxy('GET', 'http://127.1.0.1/some/path', function(err, res) {
+      proxy({ method: 'GET', url: 'http://127.1.0.1/some/path'}, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(404);
         done();
@@ -38,7 +38,7 @@ describe('Core Functionionality', function() {
     });
 
     it('should forward 500 GET requests', function(done) {
-      testProxyRequest('GET', remoteHost+'/some/path', sendErrorResponse, function(err, res) {
+      testProxyRequest({ method: 'GET', url: remoteHost+'/some/path', responseHandler: sendErrorResponse}, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(500);
         done();
@@ -48,36 +48,36 @@ describe('Core Functionionality', function() {
 
   describe('Successful Proxy Attempts', function() {
     it('should forward GET requests with no path', function(done) {
-      testProxyRequest('GET', remoteHost+'/', sendOkResponse, expectValidProxy(done));
+      testProxyRequest({ method: 'GET', url: remoteHost+'/', responseHandler: sendOkResponse}, expectValidProxy(done));
     });
 
     it('should forward GET requests with a path', function(done) {
-      testProxyRequest('GET', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest({ method: 'GET', url: remoteHost+'/some/path', responseHandler: sendOkResponse}, expectValidProxy(done));
     });
 
     it('should forward GET requests with query params', function(done) {
-      testProxyRequest('GET', remoteHost+'/some/path?query=string', sendOkResponse, expectValidProxy(done));
+      testProxyRequest({ method: 'GET', url: remoteHost+'/some/path?query=string', responseHandler: sendOkResponse}, expectValidProxy(done));
     });
 
     it('should forward POST requests', function(done) {
-      testProxyRequest('POST', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest({ method: 'POST', url: remoteHost+'/some/path', responseHandler: sendOkResponse}, expectValidProxy(done));
     });
 
     it('should forward POST requests when body is included as well', function(done) {
       response = 'testing response'
-      testProxyRequest('POST', remoteHost+'/some/path', sendEchoResponse, expectValidProxy(done, response), response);
+      testProxyRequest({ method: 'POST', url: remoteHost+'/some/path', responseHandler: sendEchoResponse}, expectValidProxy(done, response), response);
     });
 
     it('should forward PUT requests', function(done) {
-      testProxyRequest('PUT', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest({ method: 'PUT', url: remoteHost+'/some/path', responseHandler: sendOkResponse}, expectValidProxy(done));
     });
 
     it('should forward PATCH requests', function(done) {
-      testProxyRequest('PATCH', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest({ method: 'PATCH', url: remoteHost+'/some/path', responseHandler: sendOkResponse}, expectValidProxy(done));
     });
 
     it('should forward DELETE requests', function(done) {
-      testProxyRequest('DELETE', remoteHost+'/some/path', sendOkResponse, expectValidProxy(done));
+      testProxyRequest({ method: 'DELETE', url: remoteHost+'/some/path', responseHandler: sendOkResponse}, expectValidProxy(done));
     });
 
     it('should forward requests to target server with Basic Auth', function(done) {
@@ -90,7 +90,7 @@ describe('Core Functionionality', function() {
         return res.end();
       }
 
-      testProxyRequest('GET', 'http://bob:cat@127.0.0.1:7000/', listen_response, expectValidProxy(done));
+      testProxyRequest({ method: 'GET', url: 'http://bob:cat@127.0.0.1:7000/', responseHandler: listen_response}, expectValidProxy(done));
     });
 
     it('should forward arbitary request headers', function(done) {
@@ -103,7 +103,14 @@ describe('Core Functionionality', function() {
         return res.end();
       }
 
-      testProxyRequest('GET', 'http://bob:cat@127.0.0.1:7000/', listen_response, {'x-test': 'batman'}, expectValidProxy(done));
+      var testParams = {
+        method: 'GET',
+        url: 'http://bob:cat@127.0.0.1:7000/',
+        headers: {'x-test': 'batman'},
+        responseHandler: listen_response
+      };
+
+      testProxyRequest(testParams, expectValidProxy(done));
     });
   });
 });

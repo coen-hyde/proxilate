@@ -81,7 +81,7 @@ describe('Hooks', function() {
     });
 
     it('should forward GET requests with no path', function(done) {
-      requestor('GET', remoteHost+'/', function(err, res) {
+      requestor({ method: 'GET', url: remoteHost+'/' }, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(500);
         done();
