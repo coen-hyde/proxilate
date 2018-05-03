@@ -47,6 +47,7 @@ describe('Basic Auth', function() {
   it('should return 401 when no authentication is provided', function(done) {
     requestor({ method: 'GET', url: remoteHost+'/some/path'}, function(err, res) {
       expect(err).to.equal(null);
+      expect(res.headers['www-authenticate']).to.equal('Basic realm="Credentials required"');
       expect(res.statusCode).to.equal(401);
       done();
     });
