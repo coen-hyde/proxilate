@@ -50,7 +50,7 @@ describe('Hooks', function() {
         return res.end();
       });
 
-      requestor('GET', remoteHost+'/', function(err, res) {
+      requestor({ method: 'GET', url: remoteHost+'/' }, function(err, res) {
         expect(err).to.equal(null);
         expect(res.statusCode).to.equal(200);
         done();
