@@ -64,8 +64,8 @@ describe('Core Functionionality', function() {
     });
 
     it('should forward POST requests when body is included as well', function(done) {
-      response = 'testing response'
-      testProxyRequest({ method: 'POST', url: remoteHost+'/some/path', responseHandler: sendEchoResponse}, expectValidProxy(done, response), response);
+      var body = 'testing body';
+      testProxyRequest({ method: 'POST', url: remoteHost+'/some/path', body: body, responseHandler: sendEchoResponse}, expectValidProxy(body, done));
     });
 
     it('should forward PUT requests', function(done) {

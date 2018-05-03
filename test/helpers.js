@@ -8,6 +8,9 @@ var EventEmitter2 = require('eventemitter2').EventEmitter2;
 var request = require('request');
 var _ = require('lodash');
 
+var express = require('express');
+var bodyParser = require('body-parser');
+
 var proxilate = require('../');
 var proxy = proxilate();
 
@@ -31,10 +34,16 @@ afterEach(function() {
  * Create a dummy remote host that Proxilate will forward requests to.
  * Fires a request event on the reqBus. Tests must listen and respond to this event
  */
-var targetServer = http.createServer(function(req, res) {
-  reqBus.emit('request', req, res);
-}).listen(7000);
 
+var targetServer = express();
+targetServer.use(bodyParser.text({type: '*/*'}));
+targetServer.all('/*', function(req, res, next) {
+  reqBus.emit('request', req, res);
+});
+
+targetServer.listen(7000, function() {
+  console.log('Started backend on port: '+7000);
+});
 
 // Respond with a 200
 function sendOkResponse(req, res) {
@@ -46,7 +55,9 @@ function sendOkResponse(req, res) {
 // Respond with a 200 and echo back the request body
 function sendEchoResponse(req, res) {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.write(req.body);
+  if (req.body) {
+    res.write(req.body);
+  }
   return res.end();
 }
 
@@ -107,12 +118,12 @@ function makeRequestor(proxyHost) {
     var params = {
       method: options.method,
       url: proxyHost+'/'+options.url,
-      headers: options.headers
+      headers: options.headers,
     }
 
     if (options.body) {
-      options['body'] = options.body;
-      options['headers']['Content-Type'] = 'text/plain';
+      params.body = options.body;
+      params.headers['Content-Type'] = 'text/plain';
     }
 
     request(params, cb);
@@ -120,14 +131,19 @@ function makeRequestor(proxyHost) {
 };
 
 // Validate a proxy request and response to be valid
-function expectValidProxy(done, expectedBody) {
+function expectValidProxy(body, cb) {
+  if (_.isFunction(body)) {
+    cb = body
+    body = undefined
+  }
+
   return function(err, res) {
     expect(err).to.equal(null);
 
     // Did we get a valid response
     expect(res.statusCode).to.equal(200);
-    expect(res.body).to.equal(expectedBody || responseBody);
-    done();
+    if (body) expect(res.body).to.equal(body);
+    cb();
   }
 }
 
