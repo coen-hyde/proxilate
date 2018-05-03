@@ -1,6 +1,6 @@
 {
   "name": "proxilate",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "A forward proxy",
   "main": "index.js",
   "bin": "./bin/proxilate",
