@@ -5,24 +5,24 @@
   "main": "index.js",
   "bin": "./bin/proxilate",
   "dependencies": {
-    "async": "^1.5.2",
-    "basic-auth": "^1.0.3",
-    "body-parser": "^1.18.2",
-    "express": "^4.13.4",
-    "http-proxy": "^1.12.0",
-    "lodash": "^3.10.1",
-    "requirize": "^0.1.0",
-    "winston": "^2.1.1",
-    "yargs": "^3.31.0"
+    "async": "^2.6.1",
+    "basic-auth": "^2.0.1",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "http-proxy": "^1.17.0",
+    "lodash": "^4.17.11",
+    "requirize": "^0.1.4",
+    "winston": "^3.1.0",
+    "yargs": "^12.0.5"
   },
   "devDependencies": {
-    "eventemitter2": "^0.4.14",
+    "eventemitter2": "^5.0.1",
     "expect.js": "^0.3.1",
-    "mocha": "^2.2.5",
-    "request": "^2.67.0"
+    "mocha": "^5.2.0",
+    "request": "^2.88.0"
   },
   "scripts": {
-    "test": "NODE_ENV=test mocha",
+    "test": "NODE_ENV=test mocha --exit",
     "start": "./bin/proxilate.js"
   },
   "keywords": [
